@@ -12,3 +12,6 @@ wheels/
 db.sqlite3
 .env
 .ruff_cache/
+
+*.conf
+*.acl
