@@ -6,7 +6,11 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "aiogram>=3.28.2",
+    "alembic>=1.18.4",
+    "asyncpg>=0.31.0",
     "pydantic-settings>=2.14.1",
+    "redis>=8.0.0",
+    "sqlalchemy>=2.0.50",
 ]
 
 [dependency-groups]
