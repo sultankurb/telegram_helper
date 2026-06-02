@@ -1,27 +1,20 @@
 from aiogram import Bot, F, Router, types
-from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramAPIError
-from redis.asyncio import Redis
 
 from src.app_setup.config import settings
+from src.databases.redis.connection import redis_client
+from src.app_setup.middlewares.active_users import ActivationMiddleware
+
 
 router = Router()
-
-redis_client = Redis(
-    host=settings.REDIS_HOST,
-    port=settings.REDIS_PORT,
-    password=settings.REDIS_PASSWORD,
-    username=settings.REDIS_USERNAME,
-    decode_responses=True,
+router.message.middleware(
+    ActivationMiddleware(
+        keyword="ПРОМО",
+        redis_client=redis_client,
+        admins=[settings.ADMIN_ID],
+        cache_ttl=345600
+    )
 )
-
-
-@router.message(CommandStart())
-async def cmd_start(message: types.Message):
-    if message.from_user.id == settings.ADMIN_ID:
-        await message.answer("👋 <b>Привет, Админ!</b> Режим с Redis активирован.")
-    else:
-        await message.answer("Здравствуйте! Напишите ваш вопрос, и мы вам ответим.")
 
 
 @router.message(F.chat.id == settings.ADMIN_ID, F.reply_to_message)

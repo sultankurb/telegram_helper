@@ -2,16 +2,46 @@ services:
   rediska:
     image: redis
     restart: always
-    command: redis-server --aclfile /etc/redis/users.acl
-    ports:
-      - "0.0.0.0:6379:6379"
+    container_name: rediska
+    command: redis-server --aclfile /etc/redis/users.acl && redis-server --appendonly yes
     volumes:
       - ./users.acl:/etc/redis/users.acl
+      - ./redis_data:/data
+
+    ports:
+      - "0.0.0.0:6379:6379"
+
 
   pg_db:
     image: postgres:18.4-alpine3.23
+    container_name: pg_db
     env_file:
       - .env
     restart: always
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data
     ports:
       - "0.0.0.0:5432:5432"
+
+
+#  app:
+#    build: .
+#    restart: always
+#    volumes:
+#      - .:/app
+#    depends_on:
+#      - pg_db
+#      - rediska
+#    networks:
+#      - internal_network
+#
+
+
+
+volumes:
+  redis_data:
+  pg_data:
+
+networks:
+  internal_network:
+    driver: bridge

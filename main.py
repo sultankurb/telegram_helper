@@ -3,8 +3,12 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 
+from src.app_setup.middlewares.db_session import DbSessionMiddleware
+from src.databases.postgres.connection import async_session
 from src.app_setup.config import settings
-from src.router.promo_router import router, redis_client
+from src.router.users.promo_router import router as promo_router
+from src.router.users.register_router import router as register_router
+from src.router.group.router import router as group_router
 
 
 async def main():
@@ -14,14 +18,11 @@ async def main():
 
     bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
     dp = Dispatcher()
-
-    dp.include_router(router)
-
-    logging.info("Бот успешно запущен!")
-    try:
-        await dp.start_polling(bot)
-    finally:
-        await redis_client.aclose()
+    dp.message.outer_middleware(DbSessionMiddleware(session_pool=async_session))
+    dp.include_router(register_router)
+    dp.include_router(promo_router)
+    dp.include_router(group_router)
+    await dp.start_polling(bot)
 
 
 if __name__ == "__main__":

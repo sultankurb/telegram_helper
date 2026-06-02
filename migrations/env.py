@@ -10,6 +10,7 @@ from alembic import context
 from src.app_setup.config import settings
 from src.databases.postgres.models.base import BaseORM
 from src.databases.postgres.models.admins import AdminsORM
+from src.databases.postgres.models.clients import ClientsORM
 
 
 config = context.config
