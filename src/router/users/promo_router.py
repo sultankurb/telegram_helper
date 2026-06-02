@@ -2,9 +2,8 @@ from aiogram import Bot, F, Router, types
 from aiogram.exceptions import TelegramAPIError
 
 from src.app_setup.config import settings
-from src.databases.redis.connection import redis_client
 from src.app_setup.middlewares.active_users import ActivationMiddleware
-
+from src.databases.redis.connection import redis_client
 
 router = Router()
 router.message.middleware(
@@ -12,7 +11,7 @@ router.message.middleware(
         keyword="ПРОМО",
         redis_client=redis_client,
         admins=[settings.ADMIN_ID],
-        cache_ttl=345600
+        cache_ttl=345600,
     )
 )
 
@@ -56,7 +55,9 @@ async def handle_client_message(message: types.Message, bot: Bot):
             f"msg_link:{info_msg.message_id}", message.from_user.id, ex=604800
         )
         await redis_client.set(
-            f"msg_link:{copied_msg.message_id}", message.from_user.id, ex=604800
+            f"msg_link:{copied_msg.message_id}",
+            message.from_user.id,
+            ex=604800,
         )
 
     except TelegramAPIError:

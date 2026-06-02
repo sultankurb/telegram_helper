@@ -1,4 +1,4 @@
-from aiogram import Router, F, types
+from aiogram import F, Router, types
 
 router = Router()
 
@@ -13,5 +13,4 @@ async def welcome_new_member(message: types.Message):
         await message.reply(
             text=f"Добро пожаловать, {new_member.full_name}!\n"
             f"Рады приветствовать тебя в нашем чате.",
-
         )

@@ -1,13 +1,13 @@
 import logging
 
-from aiogram import Router, F
+from aiogram import F, Router
+from aiogram.filters.command import Command
 from aiogram.types import (
-    Message,
     KeyboardButton,
+    Message,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
 )
-from aiogram.filters.command import Command
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,7 +36,6 @@ async def request_phone(message: Message):
         await message.answer(text="Hello world admins")
 
 
-
 @router.message(F.contact)
 async def get_contact(message: Message, session: AsyncSession):
     remove_keyboard = ReplyKeyboardRemove()
@@ -53,7 +52,6 @@ async def get_contact(message: Message, session: AsyncSession):
                 "telegram_id": message.from_user.id,
                 "phone_number": message.contact.phone_number,
             },
-
         )
     except SQLAlchemyError as e:
         logging.error(msg=e)

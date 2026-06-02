@@ -1,17 +1,18 @@
 import asyncio
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from alembic import context
-
-from src.app_setup.config import settings
-from src.databases.postgres.models.base import BaseORM
-from src.databases.postgres.models.admins import AdminsORM
-from src.databases.postgres.models.clients import ClientsORM
-
+from src.app_setup import settings
+from src.databases.postgres import (
+    AdminsORM,
+    BaseORM,
+    ClientsORM,
+    MediaORM,
+)
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DB_URL)
@@ -19,12 +20,10 @@ config.set_main_option("sqlalchemy.url", settings.DB_URL)
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-
 target_metadata = BaseORM.metadata
 
 
 def run_migrations_offline() -> None:
-
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -45,7 +44,6 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
@@ -59,7 +57,6 @@ async def run_async_migrations() -> None:
 
 
 def run_migrations_online() -> None:
-
     asyncio.run(run_async_migrations())
 
 

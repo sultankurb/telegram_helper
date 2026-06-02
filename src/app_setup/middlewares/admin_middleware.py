@@ -1,4 +1,5 @@
-from typing import Callable, Dict, Any, Awaitable
+from typing import Any, Awaitable, Callable, Dict
+
 from aiogram import BaseMiddleware
 from aiogram.types import Message
 
@@ -8,10 +9,10 @@ class AdminMiddleware(BaseMiddleware):
         self.admin_list = set(admin_list)
 
     async def __call__(
-            self,
-            handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
-            event: Message ,
-            data: Dict[str, Any],
+        self,
+        handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+        event: Message,
+        data: Dict[str, Any],
     ) -> Any:
 
         if event.from_user.id in self.admin_list:

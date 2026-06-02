@@ -1,5 +1,6 @@
+from sqlalchemy import BigInteger, Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, BigInteger, Boolean
+
 from src.databases.postgres.models.base import BaseORM
 
 
