@@ -29,7 +29,9 @@ async def request_phone(message: Message):
             one_time_keyboard=True,
         )
         await message.answer(
-            text="Привет! Для регистрации мне нужен ваш номер телефона. Пожалуйста, нажмите кнопку ниже👇",
+            text="Привет! "
+                 "Для регистрации мне нужен ваш номер телефона. "
+                 "Пожалуйста, нажмите кнопку ниже👇",
             reply_markup=keyboard,
         )
     else:
@@ -39,10 +41,6 @@ async def request_phone(message: Message):
 @router.message(F.contact)
 async def get_contact(message: Message, session: AsyncSession):
     remove_keyboard = ReplyKeyboardRemove()
-    await message.answer(
-        text=f"Спасибо, {message.contact.first_name}!",
-        reply_markup=remove_keyboard,
-    )
     try:
         await insert_client(
             session=session,
@@ -52,6 +50,13 @@ async def get_contact(message: Message, session: AsyncSession):
                 "telegram_id": message.from_user.id,
                 "phone_number": message.contact.phone_number,
             },
+        )
+        await message.answer(
+            text=f"Спасибо, {message.contact.first_name}!",
+            reply_markup=remove_keyboard,
+        )
+        await message.answer(
+            text=""
         )
     except SQLAlchemyError as e:
         logging.error(msg=e)

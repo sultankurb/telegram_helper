@@ -1,4 +1,4 @@
-from sqlalchemy import INTEGER, TEXT
+from sqlalchemy import INTEGER, TEXT, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.databases.postgres.models.base import BaseORM
@@ -13,3 +13,6 @@ class MediaORM(BaseORM):
     )
     media_url: Mapped[str] = mapped_column(TEXT)
     media_comments: Mapped[str] = mapped_column(TEXT)
+    is_premium: Mapped[bool] = mapped_column(
+        Boolean, default=False,
+    )

@@ -1,5 +1,7 @@
 from aiogram import F, Router, types
 
+from src.app_setup import settings
+
 router = Router()
 
 
@@ -12,5 +14,7 @@ async def welcome_new_member(message: types.Message):
 
         await message.reply(
             text=f"Добро пожаловать, {new_member.full_name}!\n"
-            f"Рады приветствовать тебя в нашем чате.",
+            f"Рады приветствовать тебя в нашем чате.\n"
+            'Просматрите ервоначальный видео у меня\n'
+            f'{settings.BOT_USERNAME}',
         )

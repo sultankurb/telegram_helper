@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     ADMIN_ID: int | None = None
     REDIS_URL: str | None = None
     DB_URL: str | None = None
+    BOT_USERNAME: str | None = None
+    GEMINI_API_KEYS: str | None = None
+    GEMINI_MODEL: str | None = None
+
 
     model_config = SettingsConfigDict(
         env_file=f"{BASE_DIR}/.env",
