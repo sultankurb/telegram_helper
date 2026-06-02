@@ -1,4 +1,6 @@
-from aiogram import Router
+from aiogram import F, Router, types
+from aiogram.filters import StateFilter
+from aiogram.fsm.context import FSMContext
 
 from src.app_setup.middlewares.db_session import DbSessionMiddleware
 from src.databases.postgres.connection import async_session
@@ -14,3 +16,8 @@ main_router.include_routers(
 main_router.message.outer_middleware(
     DbSessionMiddleware(session_pool=async_session)
 )
+
+@main_router.message(StateFilter("*"), F.text == "отмена")
+async def cancel(message: types.Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Все действия отменены")

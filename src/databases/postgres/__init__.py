@@ -3,11 +3,15 @@ from src.databases.postgres.models.base import BaseORM
 from src.databases.postgres.models.clients import ClientsORM
 from src.databases.postgres.models.media import MediaORM
 from src.databases.postgres.repository.base import SQLAlchemyRepository
+from src.databases.postgres.repository.clients import ClientsRepository
+from src.databases.postgres.repository.media import MediaRepository
 
 __all__ = [
     "SQLAlchemyRepository",
     "ClientsORM",
     "AdminsORM",
     "MediaORM",
-    "BaseORM"
+    "BaseORM",
+    "MediaRepository",
+    "ClientsRepository"
 ]

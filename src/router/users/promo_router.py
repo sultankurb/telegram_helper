@@ -8,7 +8,7 @@ from src.databases.redis.connection import redis_client
 router = Router()
 router.message.middleware(
     ActivationMiddleware(
-        keyword="ПРОМО",
+        keywords=["помошь", "admin", "админ", "help"],
         redis_client=redis_client,
         admins=[settings.ADMIN_ID],
         cache_ttl=345600,
@@ -43,7 +43,10 @@ async def handle_client_message(message: types.Message, bot: Bot):
     try:
         info_msg = await bot.send_message(
             chat_id=settings.ADMIN_ID,
-            text=f"📩 <b>От:</b> {message.from_user.full_name}\n<b>ID:</b> <code>{message.from_user.id}</code>",
+            text=f"📩 <b>От:</b> "
+                 f"{message.from_user.full_name}\n"
+                 f"<b>ID:</b> "
+                 f"<code>{message.from_user.id}</code>",
         )
 
         copied_msg = await bot.copy_message(
