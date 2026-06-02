@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import Router, F
 from aiogram.types import (
     Message,
@@ -13,6 +15,7 @@ from src.app_setup.config import settings
 from src.router.users.crud import insert_client
 
 router = Router()
+
 
 @router.message(Command("start"))
 async def request_phone(message: Message):
@@ -53,4 +56,4 @@ async def get_contact(message: Message, session: AsyncSession):
 
         )
     except SQLAlchemyError as e:
-        print(e)
+        logging.error(msg=e)
