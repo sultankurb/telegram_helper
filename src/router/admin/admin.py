@@ -81,7 +81,7 @@ async def add_description(
         state: FSMContext,
         session: AsyncSession
 ):
-    await state.update_data(media_comment=message.text)
+    await state.update_data(media_comments=message.text)
     try:
         data = await state.get_data()
         await add_media_di(session=session, data=data)
