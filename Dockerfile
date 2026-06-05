@@ -11,8 +11,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 COPY pyproject.toml ./
 
-RUN uv sync --frozen --no-install-project
+RUN uv sync --no-dev
 
 COPY . .
 
-CMD uv run main.py
+CMD uv run alembic upgrade head && uv run main.py

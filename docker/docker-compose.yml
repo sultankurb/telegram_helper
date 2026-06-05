@@ -6,11 +6,9 @@ services:
     command: redis-server --aclfile /etc/redis/users.acl && redis-server --appendonly yes
     volumes:
       - ./users.acl:/etc/redis/users.acl
-      - ./redis_data:/data
-
-    ports:
-      - "0.0.0.0:6379:6379"
-
+#      - ./redis_data:/data
+    networks:
+      - internal_network
 
   pg_db:
     image: postgres:18.4-alpine3.23
@@ -18,25 +16,24 @@ services:
     env_file:
       - .env
     restart: always
-    volumes:
-      - ./pg_data:/var/lib/postgresql/data
-    ports:
-      - "0.0.0.0:5432:5432"
-
-
-#  app:
-#    build: .
-#    restart: always
 #    volumes:
-#      - .:/app
-#    depends_on:
-#      - pg_db
-#      - rediska
-#    networks:
-#      - internal_network
-#
+#      - ./pg_data:/var/lib/postgresql/data
+    networks:
+      - internal_network
 
-
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: app
+    restart: always
+    volumes:
+      - ..:/app
+    depends_on:
+      - pg_db
+      - rediska
+    networks:
+      - internal_network
 
 volumes:
   redis_data:
