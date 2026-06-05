@@ -21,8 +21,8 @@ async def add_media_di(
         data: dict
 ):
     media_repo = MediaRepository(session=session)
-    await media_repo.insert_one(data=data)
     try:
+        await media_repo.insert_one(data=data)
         await session.commit()
     except SQLAlchemyError as e:
         await session.rollback()

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.app_setup import AdminMiddleware, settings
 from src.router.admin.crud_di import add_media_di, get_clients_di
 from src.router.admin.fms import MediaFSM
+from src.router.admin.keyboards import admin_keyboard
 
 admin_router = Router()
 admin_router.message.middleware(
@@ -17,6 +18,7 @@ admin_router.message.middleware(
 logger = logging.getLogger(__name__)
 
 
+@admin_router.message(F.text == "📋 Список клиентов")
 @admin_router.message(Command("clients"))
 async def get_clients(
         message: types.Message,
@@ -25,7 +27,7 @@ async def get_clients(
     clients_lst = await get_clients_di(session=session)
 
     if not clients_lst:
-        await message.answer("Список клиентов пуст.")
+        await message.answer("Список клиентов пуст.", reply_markup=admin_keyboard)
         return
 
     response_lines = [
@@ -35,17 +37,22 @@ async def get_clients(
     response_text = "\n".join(response_lines)
 
     try:
-        await message.answer(response_text)
+        await message.answer(response_text, reply_markup=admin_keyboard)
     except Exception as e:
         await message.answer(
             f"Ошибка при отправке списка."
-            f" Возможно, список слишком длинный: {e}"
+            f" Возможно, список слишком длинный: {e}",
+            reply_markup=admin_keyboard
         )
 
 
+@admin_router.message(StateFilter(None), F.text == "➕ Добавить медиа")
 @admin_router.message(StateFilter(None), Command("media_add"))
 async def new_media(message: types.Message, state: FSMContext):
-    await message.answer(text="Отправте мне ваше видео")
+    await message.answer(
+        text="Отправьте мне ваше видео (или документ с видео)",
+        reply_markup=types.ReplyKeyboardRemove()
+    )
     await state.set_state(MediaFSM.media_url)
 
 
@@ -59,11 +66,11 @@ async def get_video(message: types.Message, state: FSMContext):
 
     if video_id:
         await state.update_data(media_url=video_id)
-        await message.answer(text="Оставте небольшое описание видео")
+        await message.answer(text="Оставьте небольшое описание к видео")
         await state.set_state(MediaFSM.media_comments)
     else:
         await message.answer(
-            text="Пожалуйста, отправьте видео."
+            text="Пожалуйста, отправьте именно видео."
             " Другие типы документов не поддерживаются."
         )
 
@@ -74,13 +81,13 @@ async def add_description(
         state: FSMContext,
         session: AsyncSession
 ):
-    await state.update_data(media_comments=message.text)
+    await state.update_data(media_comment=message.text)
     try:
         data = await state.get_data()
         await add_media_di(session=session, data=data)
         await state.clear()
-        await message.answer(text="Успешно добавлен")
+        await message.answer(text="Видео успешно добавлено!", reply_markup=admin_keyboard)
         logger.info(msg=data)
     except Exception as e:
-        await message.answer(text=f"Критическая ошибка {e}")
+        await message.answer(text=f"Произошла ошибка при добавлении: {e}", reply_markup=admin_keyboard)
         logging.error(msg=e)

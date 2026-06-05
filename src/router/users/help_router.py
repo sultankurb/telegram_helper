@@ -8,7 +8,7 @@ from src.databases.redis.connection import redis_client
 router = Router()
 router.message.middleware(
     ActivationMiddleware(
-        keywords=["помошь", "admin", "админ", "help"],
+        keywords=["помощь", "admin", "админ", "help", "Купить интенсив"],
         redis_client=redis_client,
         admins=[settings.ADMIN_ID],
         cache_ttl=345600,
@@ -62,6 +62,7 @@ async def handle_client_message(message: types.Message, bot: Bot):
             message.from_user.id,
             ex=604800,
         )
+        await message.answer("Ваше сообщение было отправлено администратору. Ожидайте ответа.")
 
     except TelegramAPIError:
         await message.answer("Произошла ошибка при отправке.")
