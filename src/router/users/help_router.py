@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 router = Router()
 router.message.middleware(
     ActivationMiddleware(
-        keywords=["помощь", "admin", "админ", "help", "Купить интенсив"],
+        keywords=["помощь", "admin", "админ", "help", "продлить"],
         redis_client=redis_client,
         admins=[settings.ADMIN_ID],
         cache_ttl=345600,
@@ -32,7 +32,7 @@ async def handle_admin_reply(message: types.Message, bot: Bot, session: AsyncSes
 
     if not user_id_str:
         await message.answer(
-            "⚠️ Связь с этим сообщением не найдена или устарела в базе Redis."
+            "⚠️ Бұл хабарламамен байланыс табылмады немесе Redis дерекқорында ескірген."
         )
         return
 
@@ -45,7 +45,7 @@ async def handle_admin_reply(message: types.Message, bot: Bot, session: AsyncSes
         user = None
 
     if user and not user.is_active:
-        await message.answer("Пользователь заблокирован/остановил диалог — сообщение не будет доставлено.")
+        await message.answer("Пайдаланушы блоктаулы/диалогты тоқтатты — хабарлама жеткізілмейді.")
         return
 
     try:
@@ -56,7 +56,7 @@ async def handle_admin_reply(message: types.Message, bot: Bot, session: AsyncSes
         )
         await message.react([types.ReactionTypeEmoji(emoji="👍")])
     except TelegramAPIError as e:
-        await message.answer(f"❌ Ошибка отправки: {e}")
+        await message.answer(f"❌ Жіберу қатесі: {e}")
 
 
 @router.message(F.chat.id == settings.ADMIN_ID, F.reply_to_message, F.text)
@@ -66,7 +66,7 @@ async def admin_stop_reply(message: types.Message, session: AsyncSession):
         original_msg_id = message.reply_to_message.message_id
         user_id_str = await redis_client.get(f"msg_link:{original_msg_id}")
         if not user_id_str:
-            await message.answer("Связь с этим сообщением не найдена в Redis.")
+            await message.answer("Бұл хабарламамен байланыс Redis-те табылмады.")
             return
 
         user_id = int(user_id_str)
@@ -76,20 +76,20 @@ async def admin_stop_reply(message: types.Message, session: AsyncSession):
                 user.is_active = False
                 await session.commit()
                 await redis_client.delete(f"active_user:{user_id}")
-                await message.answer(f"Диалог с пользователем {user_id} остановлен.")
+                await message.answer(f"Пайдаланушымен {user_id} диалог тоқтатылды.")
                 try:
                     await message.bot.send_message(
                         chat_id=user_id,
-                        text="Администратор остановил диалог. Сообщения больше не будут доставлены.",
+                        text="Әкімші диалогты тоқтатты. Хабарламалар бұдан былай жеткізілмейді.",
                     )
                 except TelegramAPIError:
-                    logger.warning(f"Не удалось уведомить пользователя {user_id} об остановке.")
+                    logger.warning(f"Пайдаланушыға {user_id} тоқтату туралы хабарлау мүмкін болмады.")
             else:
-                await message.answer("Пользователь не найден в БД.")
+                await message.answer("Пайдаланушы ДҚ-да табылмады.")
         except Exception as e:
             await session.rollback()
-            logger.error(f"Ошибка при остановке диалога для {user_id}: {e}")
-            await message.answer("Произошла ошибка при остановке диалога.")
+            logger.error(f"{user_id} үшін диалогты тоқтату кезіндегі қате: {e}")
+            await message.answer("Диалогты тоқтату кезінде қате пайда болды.")
 
 
 @router.message(F.chat.type == "private", F.chat.id != settings.ADMIN_ID, F.text)
@@ -106,24 +106,24 @@ async def handle_client_messages(message: types.Message, bot: Bot, session: Asyn
                 user.is_active = False
                 await session.commit()
             await redis_client.delete(f"active_user:{user_id}")
-            await message.answer("Вы остановили диалог с администратором. Сообщения больше не будут отправляться.")
+            await message.answer("Сіз әкімшімен диалогты тоқтаттыңыз. Хабарламалар бұдан былай жіберілмейді.")
             try:
                 await bot.send_message(
                     chat_id=settings.ADMIN_ID,
-                    text=f"Пользователь {message.from_user.full_name} (ID: {user_id}) остановил диалог.",
+                    text=f"Пайдаланушы {message.from_user.full_name} (ID: {user_id}) диалогты тоқтатты.",
                 )
             except TelegramAPIError:
-                logger.warning(f"Не удалось уведомить администратора о стопе от {user_id}.")
+                logger.warning(f"Әкімшіге {user_id} тоқтатуы туралы хабарлау мүмкін болмады.")
         except Exception as e:
             await session.rollback()
-            logger.error(f"Ошибка при обработке стопа от {user_id}: {e}")
-            await message.answer("Произошла ошибка при остановке диалога.")
+            logger.error(f"{user_id} тоқтатуын өңдеу кезіндегі қате: {e}")
+            await message.answer("Диалогты тоқтату кезінде қате пайда болды.")
         return
 
     try:
         info_msg = await bot.send_message(
             chat_id=settings.ADMIN_ID,
-            text=f"📩 <b>От:</b> "
+            text=f"📩 <b>Кімнен:</b> "
                  f"{message.from_user.full_name}\n"
                  f"<b>ID:</b> "
                  f"<code>{message.from_user.id}</code>",
@@ -142,7 +142,7 @@ async def handle_client_messages(message: types.Message, bot: Bot, session: Asyn
             message.from_user.id,
             ex=604800,
         )
-        await message.answer("Ваше сообщение было отправлено администратору. Ожидайте ответа.")
+        await message.answer("Сіздің хабарламаңыз әкімшіге жіберілді. Жауап күтіңіз. Диалокты токтату ушин стоп жазинг")
 
     except TelegramAPIError:
-        await message.answer("Произошла ошибка при отправке.")
+        await message.answer("Жіберу кезінде қате пайда болды.")

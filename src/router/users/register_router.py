@@ -28,7 +28,7 @@ async def send_media_and_offer(message: Message, session: AsyncSession):
     media_files = await get_recent_media(session=session, limit=5)
     if not media_files:
         logger.warning("Нет медиафайлов для отправки.")
-        await message.answer("К сожалению, сейчас нет доступных медиафайлов.")
+        await message.answer("Өкінішке орай, қазір қолжетімді медиафайлдар жоқ.")
         return
 
     logger.info(f"Найдено {len(media_files)} медиафайлов для отправки.")
@@ -41,12 +41,12 @@ async def send_media_and_offer(message: Message, session: AsyncSession):
             logger.info(f"Отправлено видео с file_id: {media.media_url}")
         except Exception as e:
             logger.error(f"Ошибка при отправке видео с file_id: {media.media_url}. Ошибка: {e}")
-            await message.answer("Не удалось отправить одно из видео. Попробуйте позже.")
+            await message.answer("Бейнелердің бірін жіберу мүмкін болмады. Кейінірек қайталап көріңіз.")
 
     await message.answer(
-        text="Для получения полного интенсива нажмите кнопку ниже",
+        text="Толық интенсивті алу үшін төмендегі түймені басыңыз",
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text="Купить интенсив")]],
+            keyboard=[[KeyboardButton(text="Продлить")]],
             resize_keyboard=True,
         )
     )
@@ -65,7 +65,7 @@ async def request_phone(message: Message, session: AsyncSession):
         await send_media_and_offer(message, session)
     else:
         contact_button = KeyboardButton(
-            text="📱 Поделиться номером телефона", request_contact=True
+            text="📱 Телефон нөмірімен бөлісу", request_contact=True
         )
         keyboard = ReplyKeyboardMarkup(
             keyboard=[[contact_button]],
@@ -73,9 +73,9 @@ async def request_phone(message: Message, session: AsyncSession):
             one_time_keyboard=True,
         )
         await message.answer(
-            text="Привет! "
-                 "Для регистрации мне нужен ваш номер телефона. "
-                 "Пожалуйста, нажмите кнопку ниже👇",
+            text="Сәлем! "
+                 "Тіркелу үшін маған сіздің телефон нөміріңіз қажет. "
+                 "Төмендегі түймені басыңыз👇",
             reply_markup=keyboard,
         )
 
@@ -100,7 +100,7 @@ async def get_contact(message: Message, session: AsyncSession):
             },
         )
         await message.answer(
-            text=f"Спасибо, {message.contact.first_name}!",
+            text=f"Рақмет, {message.contact.first_name}!",
             reply_markup=remove_keyboard,
         )
 
@@ -108,4 +108,4 @@ async def get_contact(message: Message, session: AsyncSession):
 
     except SQLAlchemyError as e:
         logging.error(msg=e)
-        await message.answer("Произошла ошибка при регистрации. Попробуйте позже.")
+        await message.answer("Тіркелу кезінде қате пайда болды. Кейінірек қайталап көріңіз.")

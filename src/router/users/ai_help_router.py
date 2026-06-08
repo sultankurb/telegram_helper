@@ -18,9 +18,9 @@ router.message.middleware(
 @router.message()
 async def debug(message: types.Message):
     await message.answer(
-        text="Этот режим тестовы.\n"
-        "При любых ошибках обрашайтесь\n"
-        "вот сюда: https://t.me/surutan666"
+        text="Бұл сынақ режимі.\n"
+        "Қандай да бір қателер туындаса, мына\n"
+        "жерге хабарласыңыз: https://t.me/surutan666"
     )
 
 @router.message(F.text)
@@ -31,4 +31,4 @@ async def get_answer_from_ai(message: types.Message):
         await message.answer(text=str(answer))
 
     except TypeError:
-        await message.answer("Nice try!")
+        await message.answer("Жақсы әрекет!")
