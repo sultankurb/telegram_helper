@@ -38,7 +38,6 @@ async def handle_admin_reply(message: types.Message, bot: Bot, session: AsyncSes
 
     user_id = int(user_id_str)
 
-    # Check DB for user active status
     try:
         user = await session.get(ClientsORM, user_id)
     except Exception as e:
@@ -76,10 +75,8 @@ async def admin_stop_reply(message: types.Message, session: AsyncSession):
             if user:
                 user.is_active = False
                 await session.commit()
-                # remove redis cache so middleware won't treat user as active
                 await redis_client.delete(f"active_user:{user_id}")
                 await message.answer(f"Диалог с пользователем {user_id} остановлен.")
-                # notify user
                 try:
                     await message.bot.send_message(
                         chat_id=user_id,
@@ -96,8 +93,33 @@ async def admin_stop_reply(message: types.Message, session: AsyncSession):
 
 
 @router.message(F.chat.type == "private", F.chat.id != settings.ADMIN_ID, F.text)
-async def handle_client_message(message: types.Message, bot: Bot):
-    """Forward user messages to admin and store links in Redis (existing behavior)."""
+async def handle_client_messages(message: types.Message, bot: Bot, session: AsyncSession):
+    """Handle client messages: forward to admin or process stop command."""
+    if not message.text:
+        return
+
+    if message.text.lower() in STOP_KEYWORDS:
+        user_id = message.from_user.id
+        try:
+            user = await session.get(ClientsORM, user_id)
+            if user:
+                user.is_active = False
+                await session.commit()
+            await redis_client.delete(f"active_user:{user_id}")
+            await message.answer("Вы остановили диалог с администратором. Сообщения больше не будут отправляться.")
+            try:
+                await bot.send_message(
+                    chat_id=settings.ADMIN_ID,
+                    text=f"Пользователь {message.from_user.full_name} (ID: {user_id}) остановил диалог.",
+                )
+            except TelegramAPIError:
+                logger.warning(f"Не удалось уведомить администратора о стопе от {user_id}.")
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"Ошибка при обработке стопа от {user_id}: {e}")
+            await message.answer("Произошла ошибка при остановке диалога.")
+        return
+
     try:
         info_msg = await bot.send_message(
             chat_id=settings.ADMIN_ID,
@@ -124,33 +146,3 @@ async def handle_client_message(message: types.Message, bot: Bot):
 
     except TelegramAPIError:
         await message.answer("Произошла ошибка при отправке.")
-
-
-@router.message(F.chat.type == "private", F.chat.id != settings.ADMIN_ID, F.text)
-async def client_stop(message: types.Message, session: AsyncSession):
-    """Allow users to stop the dialog by sending a stop keyword."""
-    if not message.text:
-        return
-
-    if message.text.lower() in STOP_KEYWORDS:
-        user_id = message.from_user.id
-        try:
-            user = await session.get(ClientsORM, user_id)
-            if user:
-                user.is_active = False
-                await session.commit()
-            # ensure redis cache cleared
-            await redis_client.delete(f"active_user:{user_id}")
-            await message.answer("Вы остановили диалог с администратором. Сообщения больше не будут отправляться.")
-            # notify admin
-            try:
-                await message.bot.send_message(
-                    chat_id=settings.ADMIN_ID,
-                    text=f"Пользователь {message.from_user.full_name} (ID: {user_id}) остановил диалог.",
-                )
-            except TelegramAPIError:
-                logger.warning(f"Не удалось уведомить администратора о стопе от {user_id}.")
-        except Exception as e:
-            await session.rollback()
-            logger.error(f"Ошибка при обработке стопа от {user_id}: {e}")
-            await message.answer("Произошла ошибка при остановке диалога.")
