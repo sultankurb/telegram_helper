@@ -10,8 +10,8 @@ from src.router.users import help_router, register_router
 
 main_router = Router()
 main_router.include_router(register_router.router)
-main_router.include_router(help_router.router)
 main_router.include_router(router.router)
+main_router.include_router(help_router.router)
 main_router.include_router(admin_router)
 
 

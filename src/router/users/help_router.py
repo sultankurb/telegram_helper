@@ -27,6 +27,39 @@ STOP_KEYWORDS = {"/stop", "стоп", "stop", "✋ стоп", "✋ Стоп"}
 @router.message(F.chat.id == settings.ADMIN_ID, F.reply_to_message)
 async def handle_admin_reply(message: types.Message, bot: Bot, session: AsyncSession):
     """Forward admin replies to the original user if they are still active."""
+    # Обработка команды стоп от админа
+    text = message.text or message.caption
+    if text and text.lower() in STOP_KEYWORDS:
+        original_msg_id = message.reply_to_message.message_id
+        user_id_str = await redis_client.get(f"msg_link:{original_msg_id}")
+        if not user_id_str:
+            await message.answer("Бұл хабарламамен байланыс Redis-те табылмады.")
+            return
+
+        user_id = int(user_id_str)
+        try:
+            user = await session.get(ClientsORM, user_id)
+            if user:
+                user.is_active = False
+                await session.commit()
+                await redis_client.delete(f"active_user:{user_id}")
+                await message.answer(f"Пайдаланушымен {user_id} диалог тоқтатылды.")
+                try:
+                    await bot.send_message(
+                        chat_id=user_id,
+                        text="Әкімші диалогты тоқтатты. Хабарламалар бұдан былай жеткізілмейді.",
+                    )
+                except TelegramAPIError:
+                    logger.warning(f"Пайдаланушыға {user_id} тоқтату туралы хабарлау мүмкін болмады.")
+            else:
+                await message.answer("Пайдаланушы ДҚ-да табылмады.")
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"{user_id} үшін диалогты тоқтату кезіндегі қате: {e}")
+            await message.answer("Диалогты тоқтату кезінде қате пайда болды.")
+        return
+
+    # Иначе пересылаем сообщение пользователю
     original_msg_id = message.reply_to_message.message_id
     user_id_str = await redis_client.get(f"msg_link:{original_msg_id}")
 
@@ -59,46 +92,12 @@ async def handle_admin_reply(message: types.Message, bot: Bot, session: AsyncSes
         await message.answer(f"❌ Жіберу қатесі: {e}")
 
 
-@router.message(F.chat.id == settings.ADMIN_ID, F.reply_to_message, F.text)
-async def admin_stop_reply(message: types.Message, session: AsyncSession):
-    """If admin replies with a stop keyword (as a reply), deactivate the user chat."""
-    if message.text and message.text.lower() in STOP_KEYWORDS:
-        original_msg_id = message.reply_to_message.message_id
-        user_id_str = await redis_client.get(f"msg_link:{original_msg_id}")
-        if not user_id_str:
-            await message.answer("Бұл хабарламамен байланыс Redis-те табылмады.")
-            return
-
-        user_id = int(user_id_str)
-        try:
-            user = await session.get(ClientsORM, user_id)
-            if user:
-                user.is_active = False
-                await session.commit()
-                await redis_client.delete(f"active_user:{user_id}")
-                await message.answer(f"Пайдаланушымен {user_id} диалог тоқтатылды.")
-                try:
-                    await message.bot.send_message(
-                        chat_id=user_id,
-                        text="Әкімші диалогты тоқтатты. Хабарламалар бұдан былай жеткізілмейді.",
-                    )
-                except TelegramAPIError:
-                    logger.warning(f"Пайдаланушыға {user_id} тоқтату туралы хабарлау мүмкін болмады.")
-            else:
-                await message.answer("Пайдаланушы ДҚ-да табылмады.")
-        except Exception as e:
-            await session.rollback()
-            logger.error(f"{user_id} үшін диалогты тоқтату кезіндегі қате: {e}")
-            await message.answer("Диалогты тоқтату кезінде қате пайда болды.")
-
-
-@router.message(F.chat.type == "private", F.chat.id != settings.ADMIN_ID, F.text)
+@router.message(F.chat.type == "private", F.chat.id != settings.ADMIN_ID)
 async def handle_client_messages(message: types.Message, bot: Bot, session: AsyncSession):
     """Handle client messages: forward to admin or process stop command."""
-    if not message.text:
-        return
+    text = message.text or message.caption
 
-    if message.text.lower() in STOP_KEYWORDS:
+    if text and text.lower() in STOP_KEYWORDS:
         user_id = message.from_user.id
         try:
             user = await session.get(ClientsORM, user_id)
